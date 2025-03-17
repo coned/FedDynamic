@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Fed Learning Realtime Dashboard</title>
+    <script src="{{ url_for('static', filename='chart.js') }}"></script>
+    <style>
+        body {
+            text-align: center;
+        }
+
+        .chart-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .chart-container div {
+            width: 600px;
+        }
+
+        #server-time {
+            color: red;
+            font-size: 22px;
+            font-weight: bold;
+            margin-top: 50px;
+        }
+
+        #node-status {
+            margin-top: 20px;
+            margin-bottom: 50px;
+            display: flex;
+            justify-content: center;
+        }
+        #node-status table {
+            margin: auto;
+            border-collapse: collapse;
+        }
+
+    </style>
+</head>
+
+<body>
+    <h1>Federated Learning Realtime Dashboard</h1>
+    <p style="font-size: 22px; margin-top: 10px;">This webpage automatically pulls the metrics data from the backend every second.</p>
+    <p style="font-size: 22px; margin-top: 10px;">The metrics data are updated after each round.</p>
+
+    <div id="server-time">Server Uptime: --h --m --s</div>
+
+    <div id="node-status"></div>
+
+    <div class="chart-container">
+        <div>
+            <canvas id="accuracyChart"></canvas>
+        </div>
+        <div>
+            <canvas id="lossChart"></canvas>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>

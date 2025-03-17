@@ -12,6 +12,10 @@ from matplotlib.lines import Line2D
 import logging
 import random
 import time
+import threading
+from flask import Flask, jsonify, render_template
+
+start_time = time.time()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s: %(message)s')
@@ -568,13 +572,54 @@ def create_visualizations():
     
     print("✅ All visualizations saved to 'results' directory")
 
+
+def start_dashboard_server():
+    """
+    runs a Flask server，retrieve realtime global_metrics (after each round)。
+    """
+    app = Flask(__name__)
+    app.config["GLOBAL_METRICS"] = global_metrics
+
+    @app.route("/")
+    def index():
+        return render_template("index.html")
+
+    @app.route("/metrics")
+    def get_metrics():
+        # compute server uptime
+        elapsed_time = time.time() - start_time
+        hours = int(elapsed_time // 3600)
+        minutes = int((elapsed_time % 3600) // 60)
+        seconds = int(elapsed_time % 60)
+
+        # get global_metrics
+        gm = app.config["GLOBAL_METRICS"]
+
+        gm_copy = dict(gm)
+        if isinstance(gm_copy.get("expected_clients"), set):
+            gm_copy["expected_clients"] = list(gm_copy["expected_clients"])
+
+        gm_copy["server_uptime"] = f"{hours}h {minutes}m {seconds}s"
+
+        return jsonify(gm_copy)
+
+    def run_flask():
+        app.run(host="127.0.0.1", port=80, debug=False)
+
+    # Flask thread runs at background
+    dashboard_thread = threading.Thread(target=run_flask, daemon=True)
+    dashboard_thread.start()
+    print("✅ Flask realtime dashboard is up，visit http://127.0.0.1:80/ to view the training process")
+
+
 def main():
     strategy = FedAvgWithFailureHandling(
         min_fit_clients=1,
         min_available_clients=1,
         min_evaluate_clients=0
     )
-    
+
+    start_dashboard_server()
     fl.server.start_server(
         server_address="0.0.0.0:8080",
         config=fl.server.ServerConfig(num_rounds=10),

@@ -579,6 +579,7 @@ def start_dashboard_server():
     """
     app = Flask(__name__)
     app.config["GLOBAL_METRICS"] = global_metrics
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # 禁用静态文件缓存
 
     @app.route("/")
     def index():
@@ -586,18 +587,26 @@ def start_dashboard_server():
 
     @app.route("/metrics")
     def get_metrics():
-        # compute server uptime
+        # 计算服务器运行时间
         elapsed_time = time.time() - start_time
         hours = int(elapsed_time // 3600)
         minutes = int((elapsed_time % 3600) // 60)
         seconds = int(elapsed_time % 60)
 
-        # get global_metrics
+        # 获取 global_metrics
         gm = app.config["GLOBAL_METRICS"]
 
         gm_copy = dict(gm)
         if isinstance(gm_copy.get("expected_clients"), set):
             gm_copy["expected_clients"] = list(gm_copy["expected_clients"])
+
+        # 转换 client_reliability 为 JSON 可用格式
+        reliability_data = {
+            client_id: [{"round": entry["round"], "reliability": entry["reliability"]}
+                        for entry in reliability]
+            for client_id, reliability in gm_copy.get("client_reliability", {}).items()
+        }
+        gm_copy["client_reliability"] = reliability_data
 
         gm_copy["server_uptime"] = f"{hours}h {minutes}m {seconds}s"
 
